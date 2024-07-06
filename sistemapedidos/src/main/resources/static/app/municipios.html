@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Municípios</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    
+</head>
+<body>
+    <h1>Listagem de Municípios</h1>
+    <form>
+        <label>ID: </label>
+        <input type="text" id="tx_id" disabled="disabled" readonly="readonly"/>
+        <br>
+        <label> NOME: </label>
+        <input type="text" id="tx_nome"/>
+        <br>
+        <label> ESTADO: </label>
+        <select id="id_estado"> </select>
+        <br>
+        <br>
+        <label> ENTREGA: </label>
+        <select id="bo_entrega">
+            <option value="true">Sim</option>
+            <option value="false">Não</option>
+        </select>
+        <br>
+        <br>
+        <button type="button" onclick="criar()">Criar</button>
+        <button type="button" onclick="alterar()">Alterar</button>
+        <button type="button" onclick="carregar()">Listar</button>
+        <button type="button" onclick="limpar()">Limpar</button>
+    </form>
+    <table border="1" id="listagem"></table>
+</body>
+
+<script>
+    function limpar() {
+    document.getElementById("tx_id").value = "";
+    document.getElementById("tx_nome").value = "";
+    document.getElementById("id_estado").value = "";
+    document.getElementById("bo_entrega").value = "";
+}
+
+
+     function criar(){
+       console.log("Criar novo municipio!!!!");
+       var xhttp = new XMLHttpRequest();
+       xhttp.onreadystatechange = function(){
+          if(this.readyState == 4 && this.status==200){
+                alert("Município criado com sucesso");
+                carregar();
+          }}
+       xhttp.open("POST","/municipio");
+       xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+       xhttp.send(JSON.stringify(
+                  {id:null,
+                    nome: document.getElementById("tx_nome").value,
+                    entrega : document.getElementById("bo_entrega").value,
+                    estado:{ id:document.getElementById("id_estado").value }
+                  }));
+    }
+
+    function alterar() {
+        console.log("Alterar Município")
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function(){
+            if(this.readyState == 4 && this.status == 200){
+                alert("Município alterado com sucesso");
+                carregar();
+            }
+        }
+
+        xhttp.open("PUT","/municipio/" + document.getElementById("tx_id").value);
+        xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xhttp.send(JSON.stringify({id:document.getElementById("tx_id").value,
+        nome: document.getElementById("tx_nome").value,
+        entrega: document.getElementById("bo_entrega").value,
+        estado:{id:document.getElementById("id_estado").value}}));
+        
+    }
+
+    function preencher(id_municipio, nome_municipio, id_estado, entrega_municipio) {
+        document.getElementById("tx_id").value = id_municipio;
+        document.getElementById("tx_nome").value = nome_municipio;
+        document.getElementById("id_estado").value = id_estado;
+        document.getElementById("bo_entrega").value = entrega_municipio;
+    }
+
+    function carregar(){
+       var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function(){
+            if(this.readyState == 4 && this.status == 200){
+                console.log("SUCESSO");
+                console.log(this.responseText);
+                var dados = JSON.parse(this.responseText);
+                console.log(dados);
+                var conteudo ="<tr> <th>ID</th> <th>Nome</th> <th>Estado</th> <th>Entrega</th> <th>Ações</th> </tr>";
+                for(var municipio of dados){
+                  conteudo += "<tr> <td>"+ municipio.id +"</td> <td>"+ municipio.nome+"</td> <td>"+ municipio.estado.nome+"</td> <td>"+ (municipio.entrega?"Sim":"Não") +"</td>";
+                  conteudo += "<td> <button type='button' onclick=preencher('"+ municipio.id +"','"+ municipio.nome +"','"+ municipio.estado.id +"','"+ municipio.entrega +"')>Alterar</button>  ";
+                  conteudo += "<button type='button' onclick='excluir("+ municipio.id +")'>Excluir</button></td></tr>"; 
+                }
+                document.getElementById("listagem").innerHTML = conteudo;
+                limpar();
+            }
+        };
+        xhttp.open("GET","/municipios");
+        xhttp.send();
+    }
+
+    function excluir(id_municipio) {
+        console.log("Excluir município!")
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function(){
+            if(this.readyState == 4 && this.status == 200){
+                alert("Município excluído com sucesso");
+                carregar();
+            }
+        }
+
+        xhttp.open("DELETE","/municipio/" + id_municipio);
+        xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xhttp.send();
+        
+    }
+
+    //<option value="1">Acre</option>
+    function carregarEstado(){
+       var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function(){
+            if(this.readyState == 4 && this.status == 200){
+                var dados = JSON.parse(this.responseText);
+                console.log(dados);
+                var conteudo ="";
+                for(var estado of dados){
+                  conteudo += "<option value="+ estado.id + ">"+estado.nome+"</option>";
+                }
+                document.getElementById("id_estado").innerHTML = conteudo;
+            }
+        };
+        xhttp.open("GET","/estados");
+        xhttp.send();
+    }
+    carregarEstado();
+</script>
+</html>
